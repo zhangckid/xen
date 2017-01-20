@@ -260,17 +260,17 @@ QEMU_TRADITIONAL_REVISION ?= $(QEMU_TAG)
 endif
 
 ifeq ($(GIT_HTTP),y)
-OVMF_UPSTREAM_URL ?= http://xenbits.xen.org/git-http/ovmf.git
-QEMU_UPSTREAM_URL ?= http://xenbits.xen.org/git-http/qemu-xen.git
-QEMU_TRADITIONAL_URL ?= http://xenbits.xen.org/git-http/qemu-xen-traditional.git
-SEABIOS_UPSTREAM_URL ?= http://xenbits.xen.org/git-http/seabios.git
-MINIOS_UPSTREAM_URL ?= http://xenbits.xen.org/git-http/mini-os.git
+OVMF_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/ovmf.git
+QEMU_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/qemu-xen.git
+QEMU_TRADITIONAL_URL ?= git://10.167.225.115/git2/xenbits.xen.org/qemu-xen-traditional.git
+SEABIOS_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/seabios.git
+MINIOS_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/mini-os.git
 else
-OVMF_UPSTREAM_URL ?= git://xenbits.xen.org/ovmf.git
-QEMU_UPSTREAM_URL ?= git://xenbits.xen.org/qemu-xen.git
-QEMU_TRADITIONAL_URL ?= git://xenbits.xen.org/qemu-xen-traditional.git
-SEABIOS_UPSTREAM_URL ?= git://xenbits.xen.org/seabios.git
-MINIOS_UPSTREAM_URL ?= git://xenbits.xen.org/mini-os.git
+OVMF_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/ovmf.git
+QEMU_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/qemu-xen.git
+QEMU_TRADITIONAL_URL ?= git://10.167.225.115/git2/xenbits.xen.org/qemu-xen-traditional.git
+SEABIOS_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/seabios.git
+MINIOS_UPSTREAM_URL ?= git://10.167.225.115/git2/xenbits.xen.org/mini-os.git
 endif
 OVMF_UPSTREAM_REVISION ?= bc54e50e0fe03c570014f363b547426913e92449
 QEMU_UPSTREAM_REVISION ?= master
