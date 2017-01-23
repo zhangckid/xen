@@ -162,6 +162,7 @@ struct domain_create {
     char *extra_config; /* extra config string */
     const char *restore_file;
     char *colo_proxy_script;
+    bool userspace_colo_proxy;
     int migrate_fd; /* -1 means none */
     int send_back_fd; /* -1 means none */
     char **migration_domname_r; /* from malloc */
@@ -3024,6 +3025,8 @@ start:
         params.stream_version =
             (hdr.mandatory_flags & XL_MANDATORY_FLAG_STREAMv2) ? 2 : 1;
         params.colo_proxy_script = dom_info->colo_proxy_script;
+        libxl_defbool_set(&params.userspace_colo_proxy,
+                          dom_info->userspace_colo_proxy);
 
         ret = libxl_domain_create_restore(ctx, &d_config,
                                           &domid, restore_fd,
@@ -4824,7 +4827,8 @@ static void migrate_receive(int debug, int daemonize, int monitor,
                             int pause_after_migration,
                             int send_fd, int recv_fd,
                             libxl_checkpointed_stream checkpointed,
-                            char *colo_proxy_script)
+                            char *colo_proxy_script,
+                            bool userspace_colo_proxy)
 {
     uint32_t domid;
     int rc, rc2;
@@ -4852,6 +4856,7 @@ static void migrate_receive(int debug, int daemonize, int monitor,
     dom_info.migration_domname_r = &migration_domname;
     dom_info.checkpointed_stream = checkpointed;
     dom_info.colo_proxy_script = colo_proxy_script;
+    dom_info.userspace_colo_proxy = userspace_colo_proxy;
 
     rc = create_domain(&dom_info);
     if (rc < 0) {
@@ -5051,11 +5056,13 @@ int main_migrate_receive(int argc, char **argv)
     int debug = 0, daemonize = 1, monitor = 1, pause_after_migration = 0;
     libxl_checkpointed_stream checkpointed = LIBXL_CHECKPOINTED_STREAM_NONE;
     int opt;
+    bool userspace_colo_proxy = false;
     char *script = NULL;
     static struct option opts[] = {
         {"colo", 0, 0, 0x100},
         /* It is a shame that the management code for disk is not here. */
         {"coloft-script", 1, 0, 0x200},
+        {"userspace-colo-proxy", 0, 0, 0x300},
         COMMON_LONG_OPTS
     };
 
@@ -5079,6 +5086,9 @@ int main_migrate_receive(int argc, char **argv)
     case 0x200:
         script = optarg;
         break;
+    case 0x300:
+        userspace_colo_proxy = true;
+        break;
     case 'p':
         pause_after_migration = 1;
         break;
@@ -5090,7 +5100,7 @@ int main_migrate_receive(int argc, char **argv)
     }
     migrate_receive(debug, daemonize, monitor, pause_after_migration,
                     STDOUT_FILENO, STDIN_FILENO,
-                    checkpointed, script);
+                    checkpointed, script, userspace_colo_proxy);
 
     return EXIT_SUCCESS;
 }
@@ -8984,11 +8994,13 @@ int main_remus(int argc, char **argv)
                           "-r",
                           daemonize ? "" : " -e");
             } else {
-                xasprintf(&rune, "exec %s %s xl migrate-receive %s %s %s %s",
+                xasprintf(&rune, "exec %s %s xl migrate-receive %s %s %s %s %s",
                           ssh_command, host,
                           "--colo",
                           r_info.netbufscript ? "--coloft-script" : "",
                           r_info.netbufscript ? r_info.netbufscript : "",
+                          libxl_defbool_val(r_info.userspace_colo_proxy) ?
+                          "--userspace-colo-proxy" : "",
                           daemonize ? "" : " -e");
             }
         }
