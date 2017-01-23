@@ -152,6 +152,10 @@ int colo_proxy_setup(libxl__colo_proxy_state *cps)
 
     STATE_AO_GC(cps->ao);
 
+    /* If enable userspace proxy mode, we don't need setup kernel proxy */
+    if (cps->is_userspace_proxy)
+        return 0;
+
     skfd = socket(PF_NETLINK, SOCK_RAW, NETLINK_COLO);
     if (skfd < 0) {
         LOGD(ERROR, ao->domid, "can not create a netlink socket: %s", strerror(errno));
@@ -222,6 +226,13 @@ out:
 
 void colo_proxy_teardown(libxl__colo_proxy_state *cps)
 {
+    /*
+     * If enable userspace proxy mode,
+     * we don't need teardown kernel proxy
+     */
+    if (cps->is_userspace_proxy)
+        return;
+
     if (cps->sock_fd >= 0) {
         close(cps->sock_fd);
         cps->sock_fd = -1;
@@ -232,6 +243,13 @@ void colo_proxy_teardown(libxl__colo_proxy_state *cps)
 
 void colo_proxy_preresume(libxl__colo_proxy_state *cps)
 {
+    /*
+     * If enable userspace proxy mode,
+     * we don't need preresume kernel proxy
+     */
+    if (cps->is_userspace_proxy)
+        return;
+
     colo_proxy_send(cps, NULL, 0, COLO_CHECKPOINT);
     /* TODO: need to handle if the call fails... */
 }
@@ -259,6 +277,15 @@ int colo_proxy_checkpoint(libxl__colo_proxy_state *cps,
     struct nlmsghdr *h;
     struct colo_msg *m;
     int ret = -1;
+
+    /*
+     * enable userspace proxy mode, tmp sleep.
+     * then we will add qemu API support this func.
+     */
+    if (cps->is_userspace_proxy) {
+        sleep(timeout_us / 1000000);
+        return 0;
+    }
 
     STATE_AO_GC(cps->ao);
 
