@@ -153,8 +153,37 @@ int colo_proxy_setup(libxl__colo_proxy_state *cps)
     STATE_AO_GC(cps->ao);
 
     /* If enable userspace proxy mode, we don't need setup kernel proxy */
-    if (cps->is_userspace_proxy)
+    /*
+     * TODO: Get userspace colo proxy checkpoint socket fd.
+     * use cps->checkpoint_host and cps->checkpoint_port.
+     */
+    if (cps->is_userspace_proxy) {
+        struct sockaddr_in addr;
+
+        memset(&addr, 0, sizeof(addr));
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(8885);
+        addr.sin_addr.s_addr = inet_addr(cps->checkpoint_host);
+        printf("into colo_proxy_setup \n");
+        printf("cps->checkpoint_host=%s \n", cps->checkpoint_host);
+        printf("cps->checkpoint_port=%s \n", cps->checkpoint_port);
+
+        skfd = socket(AF_INET, SOCK_STREAM, 0);
+        if (skfd < 0) {
+            LOGD(ERROR, ao->domid, "can not create a TCP socket: %s", strerror(errno));
+            goto out;
+        }
+
+        cps->sock_fd = skfd;
+
+        if (connect(skfd, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+            LOGD(ERROR, ao->domid, "connect error");
+            goto out;
+        }
+
+
         return 0;
+    }
 
     skfd = socket(PF_NETLINK, SOCK_RAW, NETLINK_COLO);
     if (skfd < 0) {

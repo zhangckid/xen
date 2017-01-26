@@ -86,6 +86,7 @@ void libxl__colo_save_setup(libxl__egc *egc, libxl__colo_save_state *css)
     libxl__checkpoint_devices_state *const cds = &dss->cds;
     libxl__srm_save_autogen_callbacks *const callbacks =
         &dss->sws.shs.callbacks.save.a;
+    libxl_device_nic *nics;
 
     STATE_AO_GC(dss->ao);
 
@@ -111,11 +112,17 @@ void libxl__colo_save_setup(libxl__egc *egc, libxl__colo_save_state *css)
                                            libxl__xen_script_dir_path());
 
     /* If enable userspace proxy mode, we don't need VIF */
-    if (css->cps.is_userspace_proxy)
+    if (css->cps.is_userspace_proxy) {
         cds->device_kind_flags = (1 << LIBXL__DEVICE_KIND_VBD);
-    else
+
+        /* Use this args we can connect to qemu colo-compare */
+        nics = libxl_device_nic_list(CTX, cds->domid, &cds->num_nics);
+        css->cps.checkpoint_host = nics->colo_checkpoint_host;
+        css->cps.checkpoint_port = nics->colo_checkpoint_port;
+    } else {
         cds->device_kind_flags = (1 << LIBXL__DEVICE_KIND_VIF) |
                                  (1 << LIBXL__DEVICE_KIND_VBD);
+    }
 
     cds->ops = colo_ops;
     cds->callback = colo_save_setup_done;
@@ -128,6 +135,7 @@ void libxl__colo_save_setup(libxl__egc *egc, libxl__colo_save_state *css)
     css->srs.back_channel = true;
     libxl__stream_read_start(egc, &css->srs);
     css->cps.ao = ao;
+
     if (colo_proxy_setup(&css->cps)) {
         LOGD(ERROR, cds->domid, "COLO: failed to setup colo proxy for guest");
         goto out;
